@@ -1,0 +1,32 @@
+#Extract RAIN AND TEMPERATURE DATA OVER MULTIPLE YEARS with DETAILED NOTES
+# Author: Ahmed Salim Nuhu, Contact: nuhuahme@msu.edu
+# Clear work environment
+remove(list=ls())
+library(rgdal)
+library(ncdf4)
+library(raster)
+library(httr)
+library(sp)
+
+clusters<-readOGR(dsn="/Users/salimnuhu/Dropbox/Climate_Productivity_Salim/Climate Data/temperature/satelite/zimbabwe/", layer="zwe_admbnda_adm1_zimstat_ocha_20180911")
+# Loop over years between
+for(year in c(2000:2018))  {
+  # Open the .nc (NETCDF) file as a raster object
+  rain.brick=brick("/Users/salimnuhu/Dropbox/Climate_Productivity_Salim/Climate Data/temperature/satelite/precip.",year,".nc")
+#Convert coordinates to conventional longitudes and latitudes using CRS and rotate
+  rain.brick = rotate(rain.brick)
+  crs(clusters)
+  crs(rain.brick)
+  # project the vector data (rain.brick) to the same coordinate system as the shape file(clusters) 
+  shp = spTransform(clusters, crs(rain.brick))
+  #mask the rain data with the shape file so that we can extract the geo coordinates
+  rain.mask = mask(rain.brick, shp)
+  # Now convert to data frame
+  rain.df = as.data.frame(rain.mask, xy=TRUE)
+  # Take only complete cases(drop days with all missing variables)
+  rain.df = rain.df[complete.cases(rain.df),]
+  #Take a look at the data
+  head(rain.df)
+  #Satisfied? Export this to excel
+  write.csv(pre1.df,paste0("/Users/salimnuhu/Dropbox/Climate_Productivity_Salim/Climate Data/temperature/satelite/zimbabwe/precip.",year,".csv"), row.names= FALSE)
+}
